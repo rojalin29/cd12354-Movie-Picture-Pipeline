@@ -3,3 +3,4 @@
 # Trigger
 # Trigger
 # Deployment Trigger
+trigger cd
