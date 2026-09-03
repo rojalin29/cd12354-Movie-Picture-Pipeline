@@ -80,18 +80,13 @@ jobs:
         uses: imranismail/setup-kustomize@v2
 
       - name: Build and Push Docker Image
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ secrets.FRONTEND_ECR_REPO }}
-          IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build \
-            --build-arg REACT_APP_MOVIE_API_URL="http://a0692caa950ae493495a79c6666e8693-640644962.us-east-1.elb.amazonaws.com" \
-            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
-            -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
-            starter/frontend
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          echo "=== CURRENT DIRECTORY ==="
+          pwd
+          echo "=== ROOT DIRECTORY LISTING ==="
+          ls -la
+          echo "=== FINDING ALL DOCKERFILES ==="
+          find . -name "Dockerfile"
 
       - name: Update Kubeconfig
         run: |
