@@ -2,15 +2,16 @@ name: Frontend Continuous Integration
 
 on:
   pull_request:
-    branches:
-      - main
+    branches: [ "main" ]
     paths:
       - 'starter/frontend/**'
+      - '.github/workflows/frontend-ci.yaml'
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'starter/frontend/**'
+      - '.github/workflows/frontend-ci.yaml'
   workflow_dispatch:
-
-defaults:
-  run:
-    working-directory: starter/frontend
 
 jobs:
   lint:
@@ -18,19 +19,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
-      - name: Setup NodeJS
-        uses: actions/setup-node@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
         with:
-          node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: starter/frontend/package-lock.json
+          node-version: 18
 
       - name: Install dependencies
+        working-directory: starter/frontend
         run: npm ci
 
       - name: Run lint
+        working-directory: starter/frontend
         run: npm run lint
 
   test:
@@ -38,35 +39,38 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
-      - name: Setup NodeJS
-        uses: actions/setup-node@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
         with:
-          node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: starter/frontend/package-lock.json
+          node-version: 18
 
       - name: Install dependencies
+        working-directory: starter/frontend
         run: npm ci
 
       - name: Run tests
+        working-directory: starter/frontend
         run: npm test -- --watchAll=false
-        env:
-          CI: true
 
   build:
-    name: Build Frontend Docker Image
+    name: Build Frontend
     needs: [lint, test]
     runs-on: ubuntu-latest
-    env:
-      REACT_APP_MOVIE_API_URL: http://localhost:5000
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
-      - name: Build Docker image
-        run: |
-          docker build \
-            --build-arg REACT_APP_MOVIE_API_URL="${{ env.REACT_APP_MOVIE_API_URL }}" \
-            --tag mp-frontend:latest .
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        working-directory: starter/frontend
+        run: npm ci
+
+      - name: Build frontend application
+        working-directory: starter/frontend
+        run: npm run build
