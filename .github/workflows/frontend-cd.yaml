@@ -85,11 +85,14 @@ jobs:
           ECR_REPOSITORY: ${{ secrets.FRONTEND_ECR_REPO }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
+          FRONTEND_DIR=$(find . -type f -name "Dockerfile" | grep "frontend" | head -n 1 | xargs dirname)
+          echo "Building frontend from path: $FRONTEND_DIR"
+          cd "$FRONTEND_DIR"
           docker build \
             --build-arg REACT_APP_MOVIE_API_URL="http://a0692caa950ae493495a79c6666e8693-640644962.us-east-1.elb.amazonaws.com" \
             -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
             -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
-            starter/frontend
+            .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
