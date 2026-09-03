@@ -87,10 +87,10 @@ jobs:
         run: |
           docker build \
             --build-arg REACT_APP_MOVIE_API_URL="${{ env.REACT_APP_MOVIE_API_URL }}" \
-            -t $ECR_REPOSITORY:$IMAGE_TAG \
-            -t $ECR_REPOSITORY:latest .
-          docker push $ECR_REPOSITORY:$IMAGE_TAG
-          docker push $ECR_REPOSITORY:latest
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
       - name: Update Kubeconfig
         run: |
@@ -102,6 +102,6 @@ jobs:
           IMAGE_TAG: ${{ github.sha }}
         run: |
           cd k8s
-          kustomize edit set image frontend=$ECR_REPOSITORY:$IMAGE_TAG
+          kustomize edit set image frontend=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           kustomize build | kubectl apply -f -
           kubectl rollout status deployment/frontend --timeout=180s
