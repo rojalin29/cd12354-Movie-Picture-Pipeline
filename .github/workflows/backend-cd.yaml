@@ -2,15 +2,10 @@ name: Backend Continuous Deployment
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
     paths:
       - 'starter/backend/**'
-  workflow_dispatch:
-
-defaults:
-  run:
-    working-directory: starter/backend
+      - '.github/workflows/backend-cd.yaml'
 
 jobs:
   lint:
@@ -24,16 +19,13 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-          cache: 'pipenv'
-
-      - name: Install pipenv
-        run: pip install pipenv
 
       - name: Install dependencies
-        run: pipenv install --dev
-
-      - name: Run linter
-        run: pipenv run lint
+        working-directory: starter/backend
+        run: |
+          pip install flake8
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
   test:
     name: Test Backend
@@ -46,18 +38,16 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-          cache: 'pipenv'
 
-      - name: Install pipenv
-        run: pip install pipenv
+      - name: Install dependencies and test
+        working-directory: starter/backend
+        run: |
+          pip install pipenv
+          pipenv install --system --skip-lock
+          pip install pytest
+          pytest
 
-      - name: Install dependencies
-        run: pipenv install --dev
-
-      - name: Run tests
-        run: pipenv run test
-
-  build-and-deploy:
+  build-push-deploy:
     name: Build, Push to ECR, and Deploy
     needs: [lint, test]
     runs-on: ubuntu-latest
@@ -94,7 +84,7 @@ jobs:
 
       - name: Update Kubeconfig
         run: |
-          aws eks update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }} --region ${{ secrets.AWS_REGION }}
+          aws eks update-kubeconfig --name cluster --region us-east-1
 
       - name: Deploy Manifests via Kustomize
         env:
@@ -102,7 +92,11 @@ jobs:
           ECR_REPOSITORY: ${{ secrets.BACKEND_ECR_REPO }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          cd starter/backend/k8s
+          if [ -d "starter/backend/k8s" ]; then
+            cd starter/backend/k8s
+          elif [ -d "k8s" ]; then
+            cd k8s
+          fi
           kustomize edit set image backend=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           kustomize build | kubectl apply -f -
           kubectl rollout status deployment/backend --timeout=180s

@@ -4,3 +4,4 @@
 # Trigger
 # Deployment Trigger
 trigger cd
+trigger cd fix
